@@ -13,7 +13,11 @@ const textMessage = document.getElementById('text-message');
 const textList = document.getElementById('text-list');
 const textEmpty = document.getElementById('text-empty');
 const textCount = document.getElementById('text-count');
+const TEXT_REFRESH_INTERVAL_MS = 5000;
 let maxFileSizeBytes = null;
+let textRefreshInProgress = false;
+let textRefreshQueued = false;
+let queuedTextRefreshReportsErrors = false;
 
 function showMessage(text, kind = '') {
   message.textContent = text;
@@ -165,7 +169,16 @@ function renderText(item) {
   return row;
 }
 
-async function refreshTexts() {
+async function refreshTexts({ reportErrors = true, queueIfBusy = true } = {}) {
+  if (textRefreshInProgress) {
+    if (queueIfBusy) {
+      textRefreshQueued = true;
+      queuedTextRefreshReportsErrors ||= reportErrors;
+    }
+    return;
+  }
+
+  textRefreshInProgress = true;
   try {
     const response = await fetch('/api/texts');
     if (!response.ok) throw new Error(await errorMessage(response));
@@ -173,8 +186,25 @@ async function refreshTexts() {
     textList.replaceChildren(...texts.map(renderText));
     textEmpty.hidden = texts.length !== 0;
   } catch (error) {
-    showTextMessage(`读取文字列表失败：${error.message}`, 'error');
+    if (reportErrors) {
+      showTextMessage(`读取文字列表失败：${error.message}`, 'error');
+    }
+  } finally {
+    textRefreshInProgress = false;
+    if (textRefreshQueued) {
+      const nextReportsErrors = queuedTextRefreshReportsErrors;
+      textRefreshQueued = false;
+      queuedTextRefreshReportsErrors = false;
+      void refreshTexts({ reportErrors: nextReportsErrors, queueIfBusy: false });
+    }
   }
+}
+
+async function pollTexts() {
+  if (!document.hidden) {
+    await refreshTexts({ reportErrors: false, queueIfBusy: false });
+  }
+  window.setTimeout(pollTexts, TEXT_REFRESH_INTERVAL_MS);
 }
 
 async function copySharedText(text) {
@@ -269,8 +299,14 @@ form.addEventListener('submit', async (event) => {
 });
 
 document.getElementById('refresh-button').addEventListener('click', refreshFiles);
-document.getElementById('text-refresh-button').addEventListener('click', refreshTexts);
+document.getElementById('text-refresh-button').addEventListener('click', () => refreshTexts());
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    void refreshTexts({ reportErrors: false, queueIfBusy: false });
+  }
+});
 loadConfig();
 showLanAddresses();
 refreshFiles();
 refreshTexts();
+window.setTimeout(pollTexts, TEXT_REFRESH_INTERVAL_MS);
