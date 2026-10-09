@@ -6,6 +6,13 @@ const fileList = document.getElementById('file-list');
 const empty = document.getElementById('empty');
 const addressList = document.getElementById('address-list');
 const addressMessage = document.getElementById('address-message');
+const textForm = document.getElementById('text-form');
+const textInput = document.getElementById('text-input');
+const textSubmitButton = document.getElementById('text-submit-button');
+const textMessage = document.getElementById('text-message');
+const textList = document.getElementById('text-list');
+const textEmpty = document.getElementById('text-empty');
+const textCount = document.getElementById('text-count');
 let maxFileSizeBytes = null;
 
 function showMessage(text, kind = '') {
@@ -123,6 +130,118 @@ async function deleteFile(file, button) {
   }
 }
 
+function showTextMessage(text, kind = '') {
+  textMessage.textContent = text;
+  textMessage.className = kind;
+}
+
+function renderText(item) {
+  const row = document.createElement('li');
+  const info = document.createElement('div');
+  info.className = 'text-info';
+
+  const content = document.createElement('pre');
+  content.className = 'text-content';
+  content.textContent = item.content;
+  const meta = document.createElement('div');
+  meta.className = 'file-meta';
+  meta.textContent = new Date(item.createdAt).toLocaleString();
+  info.append(content, meta);
+
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+  const copy = document.createElement('button');
+  copy.className = 'copy';
+  copy.type = 'button';
+  copy.textContent = '复制';
+  copy.addEventListener('click', () => copySharedText(item.content));
+  const remove = document.createElement('button');
+  remove.className = 'danger';
+  remove.type = 'button';
+  remove.textContent = '删除';
+  remove.addEventListener('click', () => deleteText(item, remove));
+  actions.append(copy, remove);
+  row.append(info, actions);
+  return row;
+}
+
+async function refreshTexts() {
+  try {
+    const response = await fetch('/api/texts');
+    if (!response.ok) throw new Error(await errorMessage(response));
+    const texts = await response.json();
+    textList.replaceChildren(...texts.map(renderText));
+    textEmpty.hidden = texts.length !== 0;
+  } catch (error) {
+    showTextMessage(`读取文字列表失败：${error.message}`, 'error');
+  }
+}
+
+async function copySharedText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const temporary = document.createElement('textarea');
+      temporary.value = text;
+      temporary.style.position = 'fixed';
+      temporary.style.opacity = '0';
+      document.body.append(temporary);
+      temporary.focus();
+      temporary.select();
+      const copied = document.execCommand('copy');
+      temporary.remove();
+      if (!copied) throw new Error('浏览器不允许访问剪贴板');
+    }
+    showTextMessage('文字已复制。', 'success');
+  } catch (_) {
+    showTextMessage('复制失败，请手动选择文字复制。', 'error');
+  }
+}
+
+async function deleteText(item, button) {
+  if (!confirm('删除这条文字？此操作会对所有设备生效。')) return;
+  button.disabled = true;
+  try {
+    const response = await fetch(`/api/texts/${encodeURIComponent(item.id)}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error(await errorMessage(response));
+    showTextMessage('文字已删除。', 'success');
+    await refreshTexts();
+  } catch (error) {
+    showTextMessage(error.message, 'error');
+    button.disabled = false;
+  }
+}
+
+textInput.addEventListener('input', () => {
+  textCount.textContent = `${textInput.value.length} / 20000`;
+});
+
+textForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const content = textInput.value;
+  if (!content.trim()) return showTextMessage('请输入非空文字。', 'error');
+
+  textSubmitButton.disabled = true;
+  showTextMessage('正在发送…');
+  try {
+    const response = await fetch('/api/texts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+    if (!response.ok) throw new Error(await errorMessage(response));
+    textInput.value = '';
+    textCount.textContent = '0 / 20000';
+    showTextMessage('文字已保存。', 'success');
+    await refreshTexts();
+  } catch (error) {
+    showTextMessage(`发送失败：${error.message}`, 'error');
+  } finally {
+    textSubmitButton.disabled = false;
+  }
+});
+
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   const file = fileInput.files[0];
@@ -150,6 +269,8 @@ form.addEventListener('submit', async (event) => {
 });
 
 document.getElementById('refresh-button').addEventListener('click', refreshFiles);
+document.getElementById('text-refresh-button').addEventListener('click', refreshTexts);
 loadConfig();
 showLanAddresses();
 refreshFiles();
+refreshTexts();

@@ -31,6 +31,23 @@ h2 { margin: 0 0 16px; font-size: 1.2rem; }
 .hint { color: #52636c; margin: 0 0 18px; line-height: 1.5; }
 .upload-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 input[type=file] { max-width: 100%; }
+textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid #bdcdd2;
+  border-radius: 8px;
+  padding: 12px;
+  font: inherit;
+  line-height: 1.5;
+}
+textarea:focus { outline: 2px solid #71b8aa; border-color: transparent; }
+.text-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
 
 button, .download {
   appearance: none;
@@ -44,12 +61,15 @@ button, .download {
 
 button.primary { background: #087f69; color: white; }
 button.primary:hover { background: #066b59; }
-button.secondary, .download { background: #e6f2f1; color: #075e52; }
+button.secondary, button.copy, .download { background: #e6f2f1; color: #075e52; }
 button.danger { background: #fff0ee; color: #a53d30; }
 button:disabled { opacity: .55; cursor: wait; }
 #message { min-height: 1.5em; margin: 14px 0 0; }
 #message.error { color: #a53d30; }
 #message.success { color: #087f69; }
+#text-message { min-height: 1.5em; margin: 14px 0 0; }
+#text-message.error { color: #a53d30; }
+#text-message.success { color: #087f69; }
 
 .section-head {
   display: flex;
@@ -71,6 +91,15 @@ li {
 .address-list li { display: block; }
 .address-list a { color: #087f69; font-weight: 600; overflow-wrap: anywhere; }
 .file-info { min-width: 0; }
+.text-info { min-width: 0; flex: 1; }
+.text-content {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  line-height: 1.5;
+}
+.text-list li { align-items: flex-start; }
 .file-name { font-weight: 600; overflow-wrap: anywhere; }
 .file-meta { color: #63747d; font-size: .88rem; margin-top: 4px; }
 .actions { display: flex; gap: 8px; flex-shrink: 0; }
