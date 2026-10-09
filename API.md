@@ -148,6 +148,18 @@ curl.exe -X DELETE http://localhost:8080/api/files/550e8400-e29b-41d4-a716-44665
 
 `interfaceName` 是网卡名称，`ip` 是对应 IPv4 地址。返回地址不保证手机一定可达，还取决于手机所在网络及电脑防火墙设置。
 
+### 生成局域网访问二维码
+
+`GET /api/network/qr?ip={ip}`
+
+`ip` 必须是“查询局域网地址”接口当前返回的地址。服务使用当前请求的协议和端口拼出完整首页 URL，并在本机生成二维码。成功返回 `200 OK` 和 `image/png` 图片，响应带有 `Cache-Control: no-store`。
+
+```powershell
+curl.exe "http://localhost:8080/api/network/qr?ip=192.168.1.20" --output address.png
+```
+
+二维码只编码访问 URL，不会建立网络连接或绕过防火墙。地址不属于当前活动网卡时返回 `400`；生成图片失败时返回 `500`。本功能使用本地 ZXing 依赖，不调用第三方二维码服务。
+
 ## 错误响应
 
 上述接口由应用处理的错误使用以下 JSON 结构：

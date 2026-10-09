@@ -59,20 +59,36 @@ async function showLanAddresses() {
     if (!response.ok) throw new Error('无法读取地址');
     const addresses = await response.json();
     addressList.replaceChildren();
-    const port = window.location.port || '80';
+    const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
     for (const address of addresses) {
       const row = document.createElement('li');
+      const info = document.createElement('div');
+      info.className = 'address-info';
       const link = document.createElement('a');
-      link.href = `http://${address.ip}:${port}/`;
+      link.href = `${window.location.protocol}//${address.ip}:${port}/`;
       link.textContent = link.href;
       const label = document.createElement('div');
       label.className = 'file-meta';
       label.textContent = address.interfaceName;
-      row.append(link, label);
+      info.append(link, label);
+
+      const qrCode = document.createElement('img');
+      qrCode.className = 'qr-code';
+      qrCode.src = `/api/network/qr?ip=${encodeURIComponent(address.ip)}`;
+      qrCode.alt = `${address.interfaceName} 的局域网访问二维码`;
+      qrCode.width = 180;
+      qrCode.height = 180;
+      qrCode.addEventListener('error', () => {
+        const error = document.createElement('span');
+        error.className = 'qr-error';
+        error.textContent = '二维码生成失败';
+        qrCode.replaceWith(error);
+      });
+      row.append(info, qrCode);
       addressList.append(row);
     }
     addressMessage.textContent = addresses.length
-      ? '这些是电脑当前的局域网地址；虚拟网卡地址可能无法从手机访问。'
+      ? '手机可扫描对应二维码访问；若有多个地址，优先尝试 Wi-Fi 或有线网卡。'
       : '未找到可用的局域网 IPv4 地址，请确认电脑已连接 Wi-Fi 或有线网络。';
   } catch (_) {
     addressMessage.textContent = '读取地址失败，请检查电脑的网络连接。';

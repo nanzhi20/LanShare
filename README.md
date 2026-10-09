@@ -4,7 +4,7 @@ LanShare 是一个基于 Spring Boot 的局域网共享工具，支持同一局�
 
 ## 运行方法
 
-需要 Java 17 和 Maven。在项目根目录运行 `mvn spring-boot:run`，或在 IDEA 中运行 `LanShareApplication`。电脑浏览器打开 `http://localhost:8080`，首页会列出当前电脑的局域网 IPv4 地址。手机与电脑连接同一局域网后，在手机浏览器打开页面显示的 Wi-Fi 地址。如果无法连接，检查电脑防火墙是否允许本应用在当前网络接收连接。
+需要 Java 17 和 Maven。在项目根目录运行 `mvn spring-boot:run`，或在 IDEA 中运行 `LanShareApplication`。电脑浏览器打开 `http://localhost:8080`，首页会列出当前电脑的局域网 IPv4 地址，并在本机生成对应的访问二维码。手机与电脑连接同一局域网后，可扫描 Wi-Fi 或有线网卡对应的二维码，也可手动输入地址。如果无法连接，检查是否选错网卡，以及电脑防火墙是否允许本应用在当前网络接收连接。
 
 上传文件保存在项目运行目录的 `uploads/`，首页会显示实际的绝对保存路径。服务重启后文件仍会保留；该目录不会提交到 Git。上传上限由 `application.properties` 中的 `spring.servlet.multipart.max-file-size` 决定，默认单文件 100 MB；如需修改上限，也要相应调整 `spring.servlet.multipart.max-request-size`。相同文件名的上传会分别保存。
 
@@ -16,7 +16,7 @@ LanShare 是一个基于 Spring Boot 的局域网共享工具，支持同一局�
 
 ## 手动验收
 
-在 IDEA 中可以分别运行 `NetworkAddressManualCheck.main()`、`FileStorageManualCheck.main()` 和 `TextStorageManualCheck.main()`，查看网卡地址、文件存储与文字持久化逻辑的输出。这些入口位于 `src/test/java`，不会随应用启动自动运行；存储检查使用独立临时目录，不影响正式数据。
+在 IDEA 中可以分别运行 `NetworkAddressManualCheck.main()`、`QrCodeManualCheck.main()`、`FileStorageManualCheck.main()` 和 `TextStorageManualCheck.main()`，查看网卡地址、二维码生成、文件存储与文字持久化逻辑的输出。这些入口位于 `src/test/java`，不会随应用启动自动运行；存储检查使用独立临时目录，不影响正式数据。二维码检查会在系统临时目录生成一张 PNG 图片，并输出其位置供手动扫码。
 
 1. 在电脑上启动服务，打开 `http://localhost:8080`；在同一 Wi-Fi 下的手机上打开电脑的局域网地址。
 2. 用手机上传一个普通文件，电脑刷新页面后应看到文件名、大小和上传时间，并能下载到与原文件内容一致的文件。
@@ -36,7 +36,14 @@ LanShare 是一个基于 Spring Boot 的局域网共享工具，支持同一局�
 7. 选择一个文件但不上传，等待至少两轮刷新，确认文件选择没有被清空；上传大文件时，文字轮询不应中断上传。
 8. 将页面切换到后台一段时间，再切回页面，确认文字列表立即更新。
 
+二维码访问的手动验收：
+
+1. 在 IDEA 中运行 `QrCodeManualCheck.main()`，打开输出的 PNG，确认手机可以识别其中的示例 URL。
+2. 启动应用并用电脑打开首页，确认每个候选局域网地址旁都有二维码，且页面上仍显示原始 URL 和网卡名称。
+3. 手机连接同一局域网，扫描 Wi-Fi 或有线网卡对应的二维码，应打开与页面显示一致的地址。
+4. 若页面列出多个网卡，确认扫描虚拟或不可达地址失败不会影响其他二维码；二维码不能绕过防火墙。
+5. 请求不属于当前活动网卡的地址，例如 `/api/network/qr?ip=203.0.113.1`，应返回 `400`。
+
 ## 后续计划
 
-- 使用二维码打开局域网访问地址
 - 根据实际需要评估是否将轮询升级为服务端实时推送
