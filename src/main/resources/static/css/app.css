@@ -1,0 +1,84 @@
+:root {
+  color-scheme: light;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #17232d;
+  background: #f4f7f8;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+
+header {
+  background: #163b4b;
+  color: white;
+  padding: 28px max(20px, calc((100vw - 900px) / 2));
+}
+
+header h1 { margin: 0 0 8px; font-size: 1.8rem; }
+header p { margin: 0; color: #cde0e6; }
+main { max-width: 900px; margin: 28px auto; padding: 0 20px 40px; }
+
+section {
+  background: white;
+  border: 1px solid #dce6e9;
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 18px #102a3810;
+}
+
+h2 { margin: 0 0 16px; font-size: 1.2rem; }
+.hint { color: #52636c; margin: 0 0 18px; line-height: 1.5; }
+.upload-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+input[type=file] { max-width: 100%; }
+
+button, .download {
+  appearance: none;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+button.primary { background: #087f69; color: white; }
+button.primary:hover { background: #066b59; }
+button.secondary, .download { background: #e6f2f1; color: #075e52; }
+button.danger { background: #fff0ee; color: #a53d30; }
+button:disabled { opacity: .55; cursor: wait; }
+#message { min-height: 1.5em; margin: 14px 0 0; }
+#message.error { color: #a53d30; }
+#message.success { color: #087f69; }
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+ul { list-style: none; margin: 0; padding: 0; }
+li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  border-top: 1px solid #e8eef0;
+  padding: 14px 0;
+}
+
+.address-list li { display: block; }
+.address-list a { color: #087f69; font-weight: 600; overflow-wrap: anywhere; }
+.file-info { min-width: 0; }
+.file-name { font-weight: 600; overflow-wrap: anywhere; }
+.file-meta { color: #63747d; font-size: .88rem; margin-top: 4px; }
+.actions { display: flex; gap: 8px; flex-shrink: 0; }
+#empty { color: #63747d; }
+#storage-path { overflow-wrap: anywhere; }
+
+@media (max-width: 600px) {
+  li { align-items: flex-start; flex-direction: column; }
+  .actions { width: 100%; }
+  .actions > * { flex: 1; text-align: center; }
+}

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LanShare · 局域网文件传输</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/js/app.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>LanShare</h1>
+    <p>在同一个局域网内，把手机文件发送到这台电脑。</p>
+  </header>
+  <main>
+    <section>
+      <h2>手机访问地址</h2>
+      <p class="hint">手机与电脑连接同一局域网后，在手机浏览器输入下方地址。若有多个地址，优先选择 Wi-Fi 网卡对应的地址。</p>
+      <ul id="address-list" class="address-list"></ul>
+      <p id="address-message" class="hint" role="status" aria-live="polite">正在读取本机地址…</p>
+    </section>
+    <section>
+      <h2>上传文件</h2>
+      <p class="hint">选择一个不超过 <span id="max-file-size">服务端设定的大小</span> 的文件。上传后会保存在运行服务的电脑上，直到你手动删除。</p>
+      <form id="upload-form">
+        <div class="upload-row">
+          <input id="file-input" name="file" type="file" required aria-label="选择要上传的文件">
+          <button id="upload-button" class="primary" type="submit">上传</button>
+        </div>
+      </form>
+      <p id="message" role="status" aria-live="polite"></p>
+    </section>
+    <section>
+      <div class="section-head">
+        <h2>已保存文件</h2>
+        <button id="refresh-button" class="secondary" type="button">刷新列表</button>
+      </div>
+      <p id="empty" hidden>还没有上传文件。</p>
+      <ul id="file-list"></ul>
+      <p class="hint">电脑上的保存位置：<span id="storage-path">正在读取…</span></p>
+    </section>
+  </main>
+</body>
+</html>

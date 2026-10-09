@@ -1,0 +1,122 @@
+# LanShare 接口文档（第一版）
+
+服务默认运行在 `http://localhost:8080`。同一局域网中的设备可将 `localhost` 换成电脑的局域网 IPv4 地址。所有路径均以该地址为前缀；当前版本没有身份验证，仅适合可信局域网，勿暴露到公网。
+
+文件上传在手机或电脑上都可以调用；列表、下载和删除接口也未限制设备。产品页面的主要使用流程是手机上传、电脑管理文件。
+
+## 文件对象
+
+上传成功或查询列表时，文件记录的结构为：
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "example.txt",
+  "size": 1234,
+  "uploadedAt": "2026-10-09T08:30:00Z"
+}
+```
+
+| 字段 | 含义 |
+| --- | --- |
+| `id` | 文件的 UUID；下载、删除时使用此值，不使用文件名。 |
+| `name` | 上传时的原文件名；同名文件会分别保存并拥有不同的 ID。 |
+| `size` | 文件大小，单位为字节。 |
+| `uploadedAt` | ISO 8601 UTC 时间。当前实现取已保存文件的最后修改时间，表示上传时间。 |
+
+## 文件接口
+
+### 上传文件
+
+`POST /api/files`
+
+请求类型为 `multipart/form-data`，文件字段名必须为 `file`。单文件默认上限为 100 MB；空文件和无效文件名会被拒绝。成功返回 `201 Created`，响应体是上述文件对象。
+
+```powershell
+curl.exe -F "file=@C:\path\to\example.txt" http://localhost:8080/api/files
+```
+
+可能返回 `400`（缺少文件、空文件或文件名无效）、`413`（文件超过上限）、`500`（保存失败）。文件名不得包含路径分隔符和不安全字符，也不能是 Windows 保留名。
+
+### 查询文件列表
+
+`GET /api/files`
+
+成功返回 `200 OK` 和文件对象数组，按 `uploadedAt` 从新到旧排列；没有文件时返回 `[]`。
+
+```powershell
+curl.exe http://localhost:8080/api/files
+```
+
+读取存储目录失败时返回 `500`。
+
+### 下载文件
+
+`GET /api/files/{id}/download`
+
+将 `{id}` 替换为列表中的 UUID。成功返回 `200 OK`、文件内容（`application/octet-stream`）及带原文件名的 `Content-Disposition: attachment` 响应头。
+
+```powershell
+curl.exe -OJ http://localhost:8080/api/files/550e8400-e29b-41d4-a716-446655440000/download
+```
+
+ID 无效或文件不存在时返回 `404`；读取文件失败时返回 `500`。
+
+### 删除文件
+
+`DELETE /api/files/{id}`
+
+将 `{id}` 替换为列表中的 UUID。成功返回 `204 No Content`，无响应体。删除后文件不可恢复；ID 无效或文件不存在时返回 `404`，删除失败时返回 `500`。
+
+```powershell
+curl.exe -X DELETE http://localhost:8080/api/files/550e8400-e29b-41d4-a716-446655440000
+```
+
+## 页面配置与网络地址
+
+### 查询文件传输配置
+
+`GET /api/files/config`
+
+成功返回 `200 OK`：
+
+```json
+{
+  "maxFileSizeBytes": 104857600,
+  "storageDirectory": "C:\\path\\to\\LanShare\\uploads"
+}
+```
+
+`maxFileSizeBytes` 是服务端单文件上限的字节数；`storageDirectory` 是当前运行环境中的绝对存储路径。默认配置为 `spring.servlet.multipart.max-file-size=100MB`、`spring.servlet.multipart.max-request-size=101MB`、`lanshare.storage-dir=uploads`。相对存储路径以应用运行目录为基准。
+
+### 查询局域网地址
+
+`GET /api/network/addresses`
+
+成功返回 `200 OK` 和当前活动网卡的私有 IPv4 地址数组，用于在页面展示可尝试访问的电脑地址；没有符合条件的地址时返回 `[]`。单项示例：
+
+```json
+{
+  "interfaceName": "Wi-Fi",
+  "ip": "192.168.1.20"
+}
+```
+
+`interfaceName` 是网卡名称，`ip` 是对应 IPv4 地址。返回地址不保证手机一定可达，还取决于手机所在网络及电脑防火墙设置。
+
+## 错误响应
+
+上述文件接口由应用处理的错误使用以下 JSON 结构：
+
+```json
+{ "error": "文件不存在" }
+```
+
+| 状态码 | 常见原因 |
+| --- | --- |
+| `400 Bad Request` | 上传字段缺失、文件为空或文件名无效。 |
+| `404 Not Found` | 下载或删除时 ID 无效，或对应文件不存在。 |
+| `413 Payload Too Large` | 上传文件超过服务端上限。 |
+| `500 Internal Server Error` | 文件保存、读取或删除失败。 |
+
+这里列出的是当前应用明确处理的情况；其他框架层错误不保证使用相同的 JSON 结构。
